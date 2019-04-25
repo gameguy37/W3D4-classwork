@@ -11,6 +11,8 @@
 
 class Response < ApplicationRecord
     validates :user_id, :answer_choice_id, presence: true
+    validate :respondent_did_not_answer_already?
+
 
     belongs_to :answer_choice,
         primary_key: :id,
@@ -22,9 +24,20 @@ class Response < ApplicationRecord
         foreign_key: :user_id,
         class_name: :User
 
+    has_one :question,
+        through: :answer_choice,
+        source: :question
+
 
     def sibling_responses
+        all_responses = self.question.responses.where.not(id: self.id)
+    end
 
+    def respondent_did_not_answer_already?
+        user_ids = []
+        self.sibling_responses.each { |response| user_ids << response.respondent.id}
+        return false if user_ids.include?(self.id)
+        true
     end
 
 
